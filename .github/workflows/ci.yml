@@ -1,5 +1,5 @@
 name: Backend & Frontend CI
- 
+
 on:
   push:
     branches: [ main ]
@@ -8,12 +8,17 @@ on:
 
 jobs:
   backend:
-    name: .NET API
+    name: .NET APIs
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: ./apps/gateway
+    strategy:
+      matrix:
+        app:
+          - apps/gateway
+          - apps/services/audit
+          - apps/services/billing
+          - apps/services/identity
+          - apps/services/notifications
+          - apps/services/tenant
 
     steps:
       - name: Checkout
@@ -22,44 +27,52 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'      # أو الإصدار اللي تستخدمه
+          dotnet-version: '9.0.x'   # أو 8.0.x حسب مشاريعك الفعلية
 
       - name: Restore
+        working-directory: ./${{ matrix.app }}
         run: dotnet restore
 
       - name: Build
+        working-directory: ./${{ matrix.app }}
         run: dotnet build --configuration Release --no-restore
 
       - name: Test
+        working-directory: ./${{ matrix.app }}
         run: dotnet test --configuration Release --no-build --verbosity normal
-
+        
   frontend:
-    name: React app
-    runs-on: ubuntu-latest
-    needs: backend      # يشغّل بعد ما ينجح الـ backend (احذف هذا لو تبيهم متوازيين)
-
-    defaults:
-      run:
-        working-directory: ./frontend  # مجلد الـ React
-
-    steps:
-      - name: Checkout
+   name: Turborepo (React apps)
+         runs-on: ubuntu-latest
+         
+         steps:
+          - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 24
+          cache: 'pnpm'
+          cache-dependency-path: |
+            pnpm-lock.yaml
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Test
-        run: npm test -- --watch=false
-
-      - name: Build
-        run: npm run build
+       - name: Install dependencies
+         run: pnpm install
+ 
+       - name: Lint admin
+         run: pnpm turbo lint --filter=admin
+ 
+       - name: Lint web
+         run: pnpm turbo lint --filter=web
+ 
+       - name: Build admin
+         run: pnpm turbo build --filter=admin
+ 
+       - name: Build web
+         run: pnpm turbo build --filter=web  
