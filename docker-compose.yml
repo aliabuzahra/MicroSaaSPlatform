@@ -59,8 +59,10 @@ services:
       - ReverseProxy__Clusters__identity-cluster__Destinations__destination1__Address=http://identity-service:8080
       - ReverseProxy__Clusters__tenant-cluster__Destinations__destination1__Address=http://tenant-service:8080
       - ReverseProxy__Clusters__billing-cluster__Destinations__destination1__Address=http://billing-service:8080
+      - ConnectionStrings__Redis=redis:6379
     depends_on:
       - identity-service
+      - redis
     restart: always
 
   billing-service:
@@ -76,9 +78,11 @@ services:
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_ENVIRONMENT=Development
       - Paddle__WebhookSecret=paddle_secret_test_123
+      - ConnectionStrings__Redis=redis:6379
     depends_on:
       - db
       - rabbitmq
+      - redis
     restart: always
 
 volumes:

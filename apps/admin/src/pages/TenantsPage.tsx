@@ -3,9 +3,16 @@ import { fetchTenants, createTenant } from "../api/client";
 import { Card, CardContent, CardHeader, CardTitle, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Input } from "@saas/ui";
 import { useState } from "react";
 
+interface Tenant {
+    id: string;
+    name: string;
+    slug: string;
+    subscriptionPlan: string;
+}
+
 export function TenantsPage() {
     const queryClient = useQueryClient();
-    const { data: tenants, isLoading } = useQuery({ queryKey: ["tenants"], queryFn: fetchTenants });
+    const { data: tenants, isLoading } = useQuery<Tenant[]>({ queryKey: ["tenants"], queryFn: fetchTenants });
 
     const [formData, setFormData] = useState({ name: "", slug: "", email: "" });
 
@@ -71,7 +78,7 @@ export function TenantsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {tenants?.map((tenant: unknown) => (
+                            {tenants?.map((tenant) => (
                                 <TableRow key={tenant.id}>
                                     <TableCell className="font-mono">{tenant.id}</TableCell>
                                     <TableCell>{tenant.name}</TableCell>

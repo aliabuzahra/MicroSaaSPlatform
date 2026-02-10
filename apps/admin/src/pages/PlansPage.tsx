@@ -3,9 +3,16 @@ import { fetchPlans, createPlan } from "../api/client";
 import { Card, CardContent, CardHeader, CardTitle, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Input } from "@saas/ui";
 import { useState } from "react";
 
+interface Plan {
+    id: string;
+    name: string;
+    amount: number;
+    stripePriceId: string;
+}
+
 export function PlansPage() {
     const queryClient = useQueryClient();
-    const { data: plans, isLoading } = useQuery({ queryKey: ["plans"], queryFn: fetchPlans });
+    const { data: plans, isLoading } = useQuery<Plan[]>({ queryKey: ["plans"], queryFn: fetchPlans });
 
     const [formData, setFormData] = useState({ name: "", amount: 0 });
 
@@ -67,7 +74,7 @@ export function PlansPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {plans?.map((plan: unknown) => (
+                            {plans?.map((plan) => (
                                 <TableRow key={plan.id}>
                                     <TableCell className="font-mono">{plan.id}</TableCell>
                                     <TableCell>{plan.name}</TableCell>
