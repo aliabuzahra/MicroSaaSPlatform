@@ -27,7 +27,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'   # أو 8.0.x حسب مشاريعك الفعلية
+          dotnet-version: '9.0.x'   # غيّرها لو مشاريعك على 8.0.x مثلاً
 
       - name: Restore
         working-directory: ./${{ matrix.app }}
@@ -40,13 +40,13 @@ jobs:
       - name: Test
         working-directory: ./${{ matrix.app }}
         run: dotnet test --configuration Release --no-build --verbosity normal
-        
+
   frontend:
-   name: Turborepo (React apps)
-         runs-on: ubuntu-latest
-         
-         steps:
-          - name: Checkout
+    name: Turborepo (React apps)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
@@ -62,17 +62,17 @@ jobs:
           cache-dependency-path: |
             pnpm-lock.yaml
 
-       - name: Install dependencies
-         run: pnpm install
- 
-       - name: Lint admin
-         run: pnpm turbo lint --filter=admin
- 
-       - name: Lint web
-         run: pnpm turbo lint --filter=web
- 
-       - name: Build admin
-         run: pnpm turbo build --filter=admin
- 
-       - name: Build web
-         run: pnpm turbo build --filter=web  
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint admin
+        run: pnpm turbo lint --filter=admin
+
+      - name: Lint web
+        run: pnpm turbo lint --filter=web
+
+      - name: Build admin
+        run: pnpm turbo build --filter=admin
+
+      - name: Build web
+        run: pnpm turbo build --filter=web
