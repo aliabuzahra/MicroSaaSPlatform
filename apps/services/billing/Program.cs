@@ -60,3 +60,5 @@ app.MapUsageEndpoints();
 app.MapPaddleWebhook();
 
 app.Run();
+
+public partial class Program { }

@@ -50,11 +50,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
       - name: Test (Unit)
         working-directory: ./${{ matrix.app }}
-        # Only run test if a test project exists. Using 'continue-on-error' or conditional logic is tricky in matrix step.
-        # Assuming no unit tests in service folders yet, just build is fine. 
-        # If user wants, we can try running 'dotnet test' but it might fail if 0 test projects found.
-        # For now, let's keep it simple: Build IS the verification.
-        run: echo "Build successful. Skipping unit tests as none are configured in service dir."
+        run: dotnet test **/*.Tests.csproj --configuration Release --no-build --verbosity normal
 
   frontend:
     name: Frontend (Turbo)
@@ -97,4 +93,4 @@ jobs:
       - name: Type Check / Compile
         working-directory: ./tests/e2e
         # Just verifying the test code is valid TS
-        run: npx tsc --noEmit
+        run: npx -p typescript tsc --noEmit

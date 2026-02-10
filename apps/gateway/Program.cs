@@ -18,3 +18,5 @@ app.UseMiddleware<RedisRateLimitingMiddleware>();
 app.MapReverseProxy();
 
 app.Run();
+
+public partial class Program { }

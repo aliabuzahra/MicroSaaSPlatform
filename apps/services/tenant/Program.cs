@@ -30,3 +30,5 @@ app.UseHttpsRedirection();
 app.MapTenantEndpoints();
 
 app.Run();
+
+public partial class Program { }
