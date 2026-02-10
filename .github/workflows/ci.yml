@@ -13,7 +13,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./backend   # مجلد الـ .NET API
+        working-directory: ./apps/gateway
 
     steps:
       - name: Checkout
