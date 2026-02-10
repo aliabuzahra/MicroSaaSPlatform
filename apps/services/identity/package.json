@@ -1,0 +1,10 @@
+{
+    "name": "identity-service",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "dotnet watch run --project SaaS.Identity.Service.csproj --urls=http://localhost:5001",
+        "build": "dotnet build SaaS.Identity.Service.csproj",
+        "start": "dotnet run --project SaaS.Identity.Service.csproj --urls=http://localhost:5001"
+    }
+}

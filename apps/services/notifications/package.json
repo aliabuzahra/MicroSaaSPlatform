@@ -1,0 +1,10 @@
+{
+    "name": "notifications-service",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "dotnet watch run --project SaaS.Notifications.Service.csproj --urls=http://localhost:5004",
+        "build": "dotnet build SaaS.Notifications.Service.csproj",
+        "start": "dotnet run --project SaaS.Notifications.Service.csproj --urls=http://localhost:5004"
+    }
+}

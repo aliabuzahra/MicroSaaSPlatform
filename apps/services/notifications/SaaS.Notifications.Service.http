@@ -1,0 +1,6 @@
+@SaaS.Notifications.Service_HostAddress = http://localhost:5247
+
+GET {{SaaS.Notifications.Service_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,10 @@
+{
+    "name": "gateway",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "dotnet watch run --project SaaS.Gateway.csproj --urls=http://localhost:5000",
+        "build": "dotnet build SaaS.Gateway.csproj",
+        "start": "dotnet run --project SaaS.Gateway.csproj --urls=http://localhost:5000"
+    }
+}

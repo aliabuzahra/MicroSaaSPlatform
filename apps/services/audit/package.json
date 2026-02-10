@@ -1,0 +1,10 @@
+{
+    "name": "audit-service",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "dotnet watch run --project SaaS.Audit.Service.csproj --urls=http://localhost:5005",
+        "build": "dotnet build SaaS.Audit.Service.csproj",
+        "start": "dotnet run --project SaaS.Audit.Service.csproj --urls=http://localhost:5005"
+    }
+}

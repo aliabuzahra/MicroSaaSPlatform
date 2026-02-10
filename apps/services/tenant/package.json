@@ -1,0 +1,10 @@
+{
+    "name": "tenant-service",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "dotnet watch run --project SaaS.Tenant.Service.csproj --urls=http://localhost:5002",
+        "build": "dotnet build SaaS.Tenant.Service.csproj",
+        "start": "dotnet run --project SaaS.Tenant.Service.csproj --urls=http://localhost:5002"
+    }
+}
