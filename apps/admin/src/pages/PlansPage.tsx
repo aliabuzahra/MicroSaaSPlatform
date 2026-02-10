@@ -67,7 +67,7 @@ export function PlansPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {plans?.map((plan: any) => (
+                            {plans?.map((plan: unknown) => (
                                 <TableRow key={plan.id}>
                                     <TableCell className="font-mono">{plan.id}</TableCell>
                                     <TableCell>{plan.name}</TableCell>

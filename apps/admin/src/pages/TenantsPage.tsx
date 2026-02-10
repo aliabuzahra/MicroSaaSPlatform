@@ -71,7 +71,7 @@ export function TenantsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {tenants?.map((tenant: any) => (
+                            {tenants?.map((tenant: unknown) => (
                                 <TableRow key={tenant.id}>
                                     <TableCell className="font-mono">{tenant.id}</TableCell>
                                     <TableCell>{tenant.name}</TableCell>
