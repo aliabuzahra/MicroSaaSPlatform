@@ -1,4 +1,4 @@
-ww
+
 namespace SaaS.Gateway.Tests.Integration;
 
 public class PlaceholderTests
