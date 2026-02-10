@@ -19,6 +19,8 @@ jobs:
           dotnet-version: '9.0.x'
       - name: Restore
         run: dotnet restore libs/SaaS.Shared.Kernel/SaaS.Shared.Kernel.csproj
+      - name: Dependency Scan (SCA)
+        run: dotnet list libs/SaaS.Shared.Kernel/SaaS.Shared.Kernel.csproj package --vulnerable --include-transitive
       - name: Build
         run: dotnet build libs/SaaS.Shared.Kernel/SaaS.Shared.Kernel.csproj --configuration Release --no-restore
 
@@ -45,6 +47,9 @@ jobs:
       - name: Restore
         working-directory: ./${{ matrix.app }}
         run: dotnet restore
+      - name: Scan Vulnerabilities
+        working-directory: ./${{ matrix.app }}
+        run: dotnet list package --vulnerable --include-transitive
       - name: Build
         working-directory: ./${{ matrix.app }}
         run: dotnet build --configuration Release --no-restore
@@ -71,6 +76,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Security Audit (SCA)
+        run: pnpm audit --audit-level high
+
       - name: Lint (Admin & Web)
         run: pnpm turbo lint
 
@@ -93,4 +101,4 @@ jobs:
       - name: Type Check / Compile
         working-directory: ./tests/e2e
         # Just verifying the test code is valid TS
-        run: npx -p typescript tsc --noEmit
+        run: npm run typecheck

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "test:report": "vitest run --reporter=html"
+    "test:report": "vitest run --reporter=html",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -20,7 +21,7 @@
     "axios": "^1.13.5",
     "dotenv": "^17.2.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3",
+    "typescript": "^5.4.5",
     "uuid": "^13.0.0",
     "vitest": "^4.0.18"
   }

@@ -1,0 +1,35 @@
+name: Performance Test (k6)
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Nightly at 2 AM
+  workflow_dispatch:
+    inputs:
+      vus:
+        description: 'Number of Virtual Users'
+        required: false
+        default: '20'
+      duration:
+        description: 'Test Duration'
+        required: false
+        default: '1m'
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start Stack
+        run: docker compose up -d --build
+
+      - name: Wait for Gateway
+        run: |
+          timeout 60s bash -c 'until curl -s http://localhost:5000/health; do sleep 5; done' || echo "Gateway might be slow starting..."
+
+      - name: Run k6 Load Test
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: tests/performance/load-test.js
+          flags: --env BASE_URL=http://localhost:5000
