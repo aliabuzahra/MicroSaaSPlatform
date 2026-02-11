@@ -55,7 +55,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
       - name: Test (Unit)
         working-directory: ./${{ matrix.app }}
-        run: dotnet test **/*.Tests.csproj --configuration Release --no-build --verbosity normal
+        run: dotnet test **/*.Tests.csproj --configuration Release --verbosity normal
 
   frontend:
     name: Frontend (Turbo)

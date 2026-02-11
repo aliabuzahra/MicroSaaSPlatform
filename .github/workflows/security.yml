@@ -44,5 +44,4 @@ jobs:
         uses: zaproxy/action-baseline@v0.12.0
         with:
           target: 'http://localhost:5000'
-          rules_file_name: '.ZapRules.conf'
           cmd_options: '-a'
