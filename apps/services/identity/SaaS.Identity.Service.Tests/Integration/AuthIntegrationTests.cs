@@ -1,10 +1,11 @@
 namespace SaaS.Identity.Service.Tests.Integration;
 
-public class AuthIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+[Collection("IdentityIntegrationTests")]
+public class AuthIntegrationTests
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly SharedTestContext _factory;
 
-    public AuthIntegrationTests(WebApplicationFactory<Program> factory)
+    public AuthIntegrationTests(SharedTestContext factory)
     {
         _factory = factory;
     }
