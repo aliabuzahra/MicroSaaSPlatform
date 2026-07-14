@@ -65,10 +65,12 @@ public static class AuthEndpoints
         });
 
         group.MapPost("/login", async (
-            LoginRequest request, 
+            LoginRequest request,
+            HttpContext context,
             IdentityDbContext db,
             IJwtService jwtService,
             IPasswordService passwordService,
+            IPublishEndpoint publishEndpoint,
             IOptions<JwtSettings> jwtSettings) =>
         {
             var normalizedEmail = request.Email.ToLowerInvariant();
@@ -97,6 +99,16 @@ public static class AuthEndpoints
             db.RefreshTokens.Add(refreshTokenEntity);
             user.UpdateLastLogin();
             await db.SaveChangesAsync();
+
+            var ipAddress = context.Connection.RemoteIpAddress?.ToString();
+            var userAgent = context.Request.Headers.UserAgent.ToString();
+            
+            await publishEndpoint.Publish(new UserLoggedInEvent(
+                user.Id,
+                user.Email,
+                ipAddress,
+                userAgent,
+                DateTime.UtcNow));
 
             return Results.Ok(new AuthResponse(
                 accessToken, 
@@ -147,7 +159,8 @@ public static class AuthEndpoints
 
         group.MapPost("/logout", async (
             LogoutRequest request,
-            IdentityDbContext db) =>
+            IdentityDbContext db,
+            IPublishEndpoint publishEndpoint) =>
         {
             var refreshToken = await db.RefreshTokens
                 .FirstOrDefaultAsync(t => t.Token == request.RefreshToken);
@@ -156,6 +169,10 @@ public static class AuthEndpoints
             {
                 refreshToken.Revoke();
                 await db.SaveChangesAsync();
+
+                await publishEndpoint.Publish(new UserLoggedOutEvent(
+                    refreshToken.UserId,
+                    DateTime.UtcNow));
             }
 
             return Results.Ok(new { Message = "Logged out successfully." });

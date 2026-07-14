@@ -17,6 +17,12 @@ builder.Services.AddScoped<INotificationSender, NotificationSender>();
 builder.Services.AddDbContext<NotificationsDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+var postgresConn = builder.Configuration.GetConnectionString("DefaultConnection");
+var rabbitMqConn = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+builder.Services.AddServiceHealthChecks(
+    postgresConnectionString: postgresConn,
+    rabbitMqConnectionString: $"amqp://guest:guest@{rabbitMqConn}:5672");
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -29,6 +35,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseServiceHealthChecks();
 
 app.MapNotificationEndpoints();
 

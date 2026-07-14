@@ -7,4 +7,6 @@ public record TenantInvitationSentEvent(
     string TenantName, 
     string Email, 
     string InvitationToken,
-    string Role) : IDomainEvent;
+    string Role,
+    Guid InvitationId,
+    Guid InvitedByUserId) : IDomainEvent;

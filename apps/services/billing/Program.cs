@@ -7,19 +7,25 @@ using SaaS.Shared.Kernel.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi(); // Using OpenApi instead of Swagger
+builder.Services.AddOpenApi();
 
-builder.Services.AddEventBus(builder.Configuration); // Add EventBus (MassTransit)
+builder.Services.AddEventBus(builder.Configuration);
 builder.Services.AddScoped<SubscriptionService>();
 builder.Services.AddScoped<SaaS.Billing.Service.Features.Usage.UsageService>();
 
-// Infrastructure
 builder.Services.AddDbContext<BillingDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddRedisCache(builder.Configuration.GetConnectionString("Redis"));
+
+var postgresConn = builder.Configuration.GetConnectionString("DefaultConnection");
+var redisConn = builder.Configuration.GetConnectionString("Redis");
+var rabbitMqConn = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+builder.Services.AddServiceHealthChecks(
+    postgresConnectionString: postgresConn,
+    rabbitMqConnectionString: $"amqp://guest:guest@{rabbitMqConn}:5672",
+    redisConnectionString: redisConn);
 
 var app = builder.Build();
 
@@ -53,6 +59,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseServiceHealthChecks();
 
 app.MapBillingEndpoints();
 app.MapGetSubscriptionEndpoint();

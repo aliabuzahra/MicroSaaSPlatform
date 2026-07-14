@@ -7,5 +7,7 @@ public record SubscriptionStatusChanged(
     string NewStatus, // e.g., "active", "canceled", "past_due"
     string PlanId,
     DateTime? NextBillDate,
-    DateTime OccurredOn
+    DateTime OccurredOn,
+    string? ContactEmail = null,
+    string? TenantName = null
 );

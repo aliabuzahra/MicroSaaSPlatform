@@ -18,7 +18,7 @@ public class SubscriptionStatusChangedConsumer : IConsumer<SubscriptionStatusCha
         _logger = logger;
     }
 
-    public Task Consume(ConsumeContext<SubscriptionStatusChanged> context)
+    public async Task Consume(ConsumeContext<SubscriptionStatusChanged> context)
     {
         var message = context.Message;
         
@@ -27,16 +27,36 @@ public class SubscriptionStatusChangedConsumer : IConsumer<SubscriptionStatusCha
 
         try
         {
-            _logger.LogInformation(
-                "Subscription status changed for tenant {TenantId}. Status: {Status}, Plan: {Plan}, Next Bill: {NextBill}",
-                message.TenantId, message.NewStatus, message.PlanId, message.NextBillDate);
+            if (!string.IsNullOrEmpty(message.ContactEmail))
+            {
+                await _notificationSender.SendNotificationAsync(
+                    userId: Guid.Empty,
+                    tenantId: message.TenantId,
+                    notificationType: NotificationTypes.SubscriptionUpdated,
+                    recipient: message.ContactEmail,
+                    variables: new Dictionary<string, string>
+                    {
+                        { "name", message.TenantName ?? "Customer" },
+                        { "status", message.NewStatus },
+                        { "plan", message.PlanId },
+                        { "next_bill_date", message.NextBillDate?.ToString("MMMM dd, yyyy") ?? "N/A" }
+                    });
+
+                _logger.LogInformation(
+                    "Subscription notification sent to {Email} for tenant {TenantId}. Status: {Status}, Plan: {Plan}",
+                    message.ContactEmail, message.TenantId, message.NewStatus, message.PlanId);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "No contact email provided for subscription status change notification. Tenant: {TenantId}",
+                    message.TenantId);
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to process subscription status change for tenant {TenantId}", message.TenantId);
             throw;
         }
-
-        return Task.CompletedTask;
     }
 }

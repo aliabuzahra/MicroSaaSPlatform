@@ -148,6 +148,107 @@ services:
         condition: service_healthy
     restart: always
 
+  apikeys-service:
+    build:
+      context: .
+      dockerfile: apps/services/apikeys/Dockerfile
+    container_name: saas-platform-apikeys
+    ports:
+      - "5006:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=saas_apikeys;Username=postgres;Password=postgrespassword
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Jwt__Secret=super-secret-key-for-jwt-token-generation-minimum-32-chars
+      - Jwt__Issuer=SaaS.Identity
+      - Jwt__Audience=SaaS.Platform
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
+  webhooks-service:
+    build:
+      context: .
+      dockerfile: apps/services/webhooks/Dockerfile
+    container_name: saas-platform-webhooks
+    ports:
+      - "5007:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=saas_webhooks;Username=postgres;Password=postgrespassword
+      - RabbitMQ__Host=rabbitmq
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Jwt__Secret=super-secret-key-for-jwt-token-generation-minimum-32-chars
+      - Jwt__Issuer=SaaS.Identity
+      - Jwt__Audience=SaaS.Platform
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+
+  features-service:
+    build:
+      context: .
+      dockerfile: apps/services/features/Dockerfile
+    container_name: saas-platform-features
+    ports:
+      - "5008:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=saas_features;Username=postgres;Password=postgrespassword
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Jwt__Secret=super-secret-key-for-jwt-token-generation-minimum-32-chars
+      - Jwt__Issuer=SaaS.Identity
+      - Jwt__Audience=SaaS.Platform
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
+  storage-service:
+    build:
+      context: .
+      dockerfile: apps/services/storage/Dockerfile
+    container_name: saas-platform-storage
+    ports:
+      - "5009:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=saas_storage;Username=postgres;Password=postgrespassword
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Jwt__Secret=super-secret-key-for-jwt-token-generation-minimum-32-chars
+      - Jwt__Issuer=SaaS.Identity
+      - Jwt__Audience=SaaS.Platform
+      - Storage__LocalPath=/data/storage
+    volumes:
+      - storage_data:/data/storage
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
+  config-service:
+    build:
+      context: .
+      dockerfile: apps/services/config/Dockerfile
+    container_name: saas-platform-config
+    ports:
+      - "5010:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=saas_config;Username=postgres;Password=postgrespassword
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Jwt__Secret=super-secret-key-for-jwt-token-generation-minimum-32-chars
+      - Jwt__Issuer=SaaS.Identity
+      - Jwt__Audience=SaaS.Platform
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
   gateway-service:
     build:
       context: .
@@ -163,6 +264,11 @@ services:
       - ReverseProxy__Clusters__billing-cluster__Destinations__destination1__Address=http://billing-service:8080
       - ReverseProxy__Clusters__notifications-cluster__Destinations__destination1__Address=http://notifications-service:8080
       - ReverseProxy__Clusters__audit-cluster__Destinations__destination1__Address=http://audit-service:8080
+      - ReverseProxy__Clusters__apikeys-cluster__Destinations__destination1__Address=http://apikeys-service:8080
+      - ReverseProxy__Clusters__webhooks-cluster__Destinations__destination1__Address=http://webhooks-service:8080
+      - ReverseProxy__Clusters__features-cluster__Destinations__destination1__Address=http://features-service:8080
+      - ReverseProxy__Clusters__storage-cluster__Destinations__destination1__Address=http://storage-service:8080
+      - ReverseProxy__Clusters__config-cluster__Destinations__destination1__Address=http://config-service:8080
       - ConnectionStrings__Redis=redis:6379
       - Jwt__Secret=super-secret-key-for-jwt-token-generation-minimum-32-chars
       - Jwt__Issuer=SaaS.Identity
@@ -173,9 +279,15 @@ services:
       - billing-service
       - notifications-service
       - audit-service
+      - apikeys-service
+      - webhooks-service
+      - features-service
+      - storage-service
+      - config-service
       - redis
     restart: always
 
 volumes:
   postgres_data:
   rabbitmq_data:
+  storage_data:
