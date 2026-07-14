@@ -9,6 +9,9 @@ public class IdentityDbContext : DbContext
     private readonly ITenantContext _tenantContext;
 
     public DbSet<User> Users { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+    public DbSet<EmailVerificationToken> EmailVerificationTokens { get; set; }
 
     public IdentityDbContext(DbContextOptions<IdentityDbContext> options, ITenantContext tenantContext) : base(options)
     {
@@ -26,13 +29,51 @@ public class IdentityDbContext : DbContext
             builder.HasIndex(u => u.Email).IsUnique();
             builder.Property(u => u.PasswordHash).IsRequired();
             builder.Property(u => u.FullName).IsRequired().HasMaxLength(100);
+            builder.Property(u => u.EmailVerified).HasDefaultValue(false);
+            builder.Property(u => u.LastLoginAt);
             builder.Ignore(u => u.DomainEvents);
 
-            // Tenant Isolation
             builder.Property(u => u.TenantId)
                 .HasConversion(id => id.Value, value => new TenantId(value));
             
             builder.HasQueryFilter(u => u.TenantId == _tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<RefreshToken>(builder =>
+        {
+            builder.HasKey(t => t.Id);
+            builder.Property(t => t.Token).IsRequired().HasMaxLength(256);
+            builder.HasIndex(t => t.Token).IsUnique();
+            builder.Property(t => t.UserId).IsRequired();
+            builder.Property(t => t.ExpiresAt).IsRequired();
+            builder.Property(t => t.ReplacedByToken).HasMaxLength(256);
+            builder.Ignore(t => t.DomainEvents);
+            
+            builder.HasIndex(t => t.UserId);
+        });
+
+        modelBuilder.Entity<PasswordResetToken>(builder =>
+        {
+            builder.HasKey(t => t.Id);
+            builder.Property(t => t.Token).IsRequired().HasMaxLength(256);
+            builder.HasIndex(t => t.Token).IsUnique();
+            builder.Property(t => t.UserId).IsRequired();
+            builder.Property(t => t.ExpiresAt).IsRequired();
+            builder.Ignore(t => t.DomainEvents);
+            
+            builder.HasIndex(t => t.UserId);
+        });
+
+        modelBuilder.Entity<EmailVerificationToken>(builder =>
+        {
+            builder.HasKey(t => t.Id);
+            builder.Property(t => t.Token).IsRequired().HasMaxLength(256);
+            builder.HasIndex(t => t.Token).IsUnique();
+            builder.Property(t => t.UserId).IsRequired();
+            builder.Property(t => t.ExpiresAt).IsRequired();
+            builder.Ignore(t => t.DomainEvents);
+            
+            builder.HasIndex(t => t.UserId);
         });
     }
 }

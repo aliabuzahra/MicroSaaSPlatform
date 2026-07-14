@@ -9,9 +9,11 @@ public class User : Entity<Guid>, IAggregateRoot, IMustHaveTenant
     public required string FullName { get; set; }
     public string Role { get; set; } = "User";
     public bool IsActive { get; set; } = true;
+    public bool EmailVerified { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? LastLoginAt { get; set; }
     
-    public TenantId TenantId { get; set; } = TenantId.Empty; // Default for now, should be required
+    public TenantId TenantId { get; set; } = TenantId.Empty;
 
     public static Result<User> Create(string email, string passwordHash, string fullName, TenantId tenantId)
     {
@@ -21,17 +23,56 @@ public class User : Entity<Guid>, IAggregateRoot, IMustHaveTenant
         if (string.IsNullOrWhiteSpace(passwordHash))
             return Result.Failure<User>("Password hash is required.");
 
+        if (!IsValidEmail(email))
+            return Result.Failure<User>("Invalid email format.");
+
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Email = email,
+            Email = email.ToLowerInvariant(),
             PasswordHash = passwordHash,
             FullName = fullName,
             TenantId = tenantId
         };
 
-        // Could add a Domain Event here, e.g., user.AddDomainEvent(new UserRegisteredEvent(user.Id));
-
         return Result.Success(user);
+    }
+
+    public void UpdateLastLogin()
+    {
+        LastLoginAt = DateTime.UtcNow;
+    }
+
+    public void VerifyEmail()
+    {
+        EmailVerified = true;
+    }
+
+    public void UpdatePassword(string newPasswordHash)
+    {
+        PasswordHash = newPasswordHash;
+    }
+
+    public void Deactivate()
+    {
+        IsActive = false;
+    }
+
+    public void Activate()
+    {
+        IsActive = true;
+    }
+
+    private static bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

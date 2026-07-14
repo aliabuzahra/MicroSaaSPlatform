@@ -12,6 +12,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -21,6 +26,11 @@ services:
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:alpine
@@ -28,6 +38,11 @@ services:
     ports:
       - "6379:6379"
     restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   identity-service:
     build:
@@ -41,9 +56,96 @@ services:
       - RabbitMQ__Host=rabbitmq
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_ENVIRONMENT=Development
+      - Jwt__Secret=super-secret-key-for-jwt-token-generation-minimum-32-chars
+      - Jwt__Issuer=SaaS.Identity
+      - Jwt__Audience=SaaS.Platform
     depends_on:
-      - db
-      - rabbitmq
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+
+  tenant-service:
+    build:
+      context: .
+      dockerfile: apps/services/tenant/Dockerfile
+    container_name: saas-platform-tenant
+    ports:
+      - "5002:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=saas_tenant;Username=postgres;Password=postgrespassword
+      - RabbitMQ__Host=rabbitmq
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+
+  billing-service:
+    build:
+      context: .
+      dockerfile: apps/services/billing/Dockerfile
+    container_name: saas-platform-billing
+    ports:
+      - "5003:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=saas_billing;Username=postgres;Password=postgrespassword
+      - RabbitMQ__Host=rabbitmq
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Paddle__WebhookSecret=paddle_secret_test_123
+      - ConnectionStrings__Redis=redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+
+  notifications-service:
+    build:
+      context: .
+      dockerfile: apps/services/notifications/Dockerfile
+    container_name: saas-platform-notifications
+    ports:
+      - "5004:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=saas_notifications;Username=postgres;Password=postgrespassword
+      - RabbitMQ__Host=rabbitmq
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Smtp__Enabled=false
+      - App__BaseUrl=http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+
+  audit-service:
+    build:
+      context: .
+      dockerfile: apps/services/audit/Dockerfile
+    container_name: saas-platform-audit
+    ports:
+      - "5005:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=saas_audit;Username=postgres;Password=postgrespassword
+      - RabbitMQ__Host=rabbitmq
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: always
 
   gateway-service:
@@ -59,29 +161,18 @@ services:
       - ReverseProxy__Clusters__identity-cluster__Destinations__destination1__Address=http://identity-service:8080
       - ReverseProxy__Clusters__tenant-cluster__Destinations__destination1__Address=http://tenant-service:8080
       - ReverseProxy__Clusters__billing-cluster__Destinations__destination1__Address=http://billing-service:8080
+      - ReverseProxy__Clusters__notifications-cluster__Destinations__destination1__Address=http://notifications-service:8080
+      - ReverseProxy__Clusters__audit-cluster__Destinations__destination1__Address=http://audit-service:8080
       - ConnectionStrings__Redis=redis:6379
+      - Jwt__Secret=super-secret-key-for-jwt-token-generation-minimum-32-chars
+      - Jwt__Issuer=SaaS.Identity
+      - Jwt__Audience=SaaS.Platform
     depends_on:
       - identity-service
-      - redis
-    restart: always
-
-  billing-service:
-    build:
-      context: .
-      dockerfile: apps/services/billing/Dockerfile
-    container_name: saas-platform-billing
-    ports:
-      - "5002:8080"
-    environment:
-      - ConnectionStrings__DefaultConnection=Host=db;Database=saas_billing;Username=postgres;Password=postgrespassword
-      - RabbitMQ__Host=rabbitmq
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ASPNETCORE_ENVIRONMENT=Development
-      - Paddle__WebhookSecret=paddle_secret_test_123
-      - ConnectionStrings__Redis=redis:6379
-    depends_on:
-      - db
-      - rabbitmq
+      - tenant-service
+      - billing-service
+      - notifications-service
+      - audit-service
       - redis
     restart: always
 
