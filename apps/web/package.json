@@ -13,7 +13,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.6.1",
-    "@tanstack/react-query": "^6.3.0",
+    "@tanstack/react-query": "^5.101.4",
     "@saas/ui": "workspace:*",
     "@saas/feature-identity": "workspace:*",
     "@saas/feature-tenant": "workspace:*"
