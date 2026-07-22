@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
-const GATEWAY_URL = process.env.GATEWAY_URL || 'http://localhost:5050';
+const GATEWAY_URL = process.env.GATEWAY_URL || 'http://localhost:5000';
 
 describe('Tenant Isolation E2E Tests', () => {
     const tenantA = uuidv4();
@@ -28,7 +28,8 @@ describe('Tenant Isolation E2E Tests', () => {
             validateStatus: () => true
         });
         expect(response.status).toBe(200);
-        expect(response.data.email).toBe(userA.email);
+        expect(response.data.user.email).toBe(userA.email);
+        expect(response.data.accessToken).toBeDefined();
     });
 
     it('should register User B in Tenant B', async () => {
@@ -37,7 +38,8 @@ describe('Tenant Isolation E2E Tests', () => {
             validateStatus: () => true
         });
         expect(response.status).toBe(200);
-        expect(response.data.email).toBe(userB.email);
+        expect(response.data.user.email).toBe(userB.email);
+        expect(response.data.accessToken).toBeDefined();
     });
 
     it('should FAIL to login User A when using Tenant B context', async () => {
@@ -63,6 +65,8 @@ describe('Tenant Isolation E2E Tests', () => {
         });
 
         expect(response.status).toBe(200);
-        expect(response.data.token).toBeDefined();
+        expect(response.data.accessToken).toBeDefined();
+        expect(response.data.refreshToken).toBeDefined();
+        expect(response.data.user.tenantId).toBe(tenantA);
     });
 });
