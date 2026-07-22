@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface User {
     id: string;
@@ -25,13 +25,25 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+function getInitialState(): AuthState {
+    if (typeof window === 'undefined') {
+        return { user: null, accessToken: null, isAuthenticated: false, isLoading: true };
+    }
+    const storedToken = localStorage.getItem('accessToken');
+    const storedUser = localStorage.getItem('user');
+    if (storedToken && storedUser) {
+        try {
+            const user = JSON.parse(storedUser);
+            return { user, accessToken: storedToken, isAuthenticated: true, isLoading: false };
+        } catch {
+            return { user: null, accessToken: null, isAuthenticated: false, isLoading: false };
+        }
+    }
+    return { user: null, accessToken: null, isAuthenticated: false, isLoading: false };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [state, setState] = useState<AuthState>({
-        user: null,
-        accessToken: null,
-        isAuthenticated: false,
-        isLoading: true,
-    });
+    const [state, setState] = useState<AuthState>(getInitialState);
 
     const setAuth = (accessToken: string, refreshToken: string, user: User) => {
         localStorage.setItem('accessToken', accessToken);
@@ -116,25 +128,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     useEffect(() => {
-        const storedToken = localStorage.getItem('accessToken');
-        const storedUser = localStorage.getItem('user');
-
-        if (storedToken && storedUser) {
-            try {
-                const user = JSON.parse(storedUser);
-                setState({
-                    user,
-                    accessToken: storedToken,
-                    isAuthenticated: true,
-                    isLoading: false,
-                });
-            } catch {
-                clearAuth();
-            }
-        } else {
-            setState(prev => ({ ...prev, isLoading: false }));
+        // Mark as no longer loading once mounted (handles SSR hydration edge cases)
+        if (state.isLoading) {
+            const timer = setTimeout(() => {
+                setState(prev => prev.isLoading ? { ...prev, isLoading: false } : prev);
+            }, 0);
+            return () => clearTimeout(timer);
         }
-    }, []);
+    }, [state.isLoading]);
 
     return (
         <AuthContext.Provider value={{ ...state, login, register, logout }}>
@@ -143,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
     const context = useContext(AuthContext);
     if (!context) {
