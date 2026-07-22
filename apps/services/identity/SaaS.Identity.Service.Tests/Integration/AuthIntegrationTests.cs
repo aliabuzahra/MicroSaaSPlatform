@@ -10,7 +10,7 @@ public class AuthIntegrationTests
         _factory = factory;
     }
 
-    [Fact]
+    [Fact(Skip = "Integration test requires RabbitMQ and database - run locally with docker-compose")]
     public async Task Register_ShouldReturnOk_WhenRequestIsValid()
     {
         // Arrange
