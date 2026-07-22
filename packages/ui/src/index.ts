@@ -2,4 +2,8 @@ export * from './Button';
 export * from "./Card";
 export * from "./Input";
 export * from "./Table";
+export * from "./Modal";
+export * from "./Alert";
+export * from "./Badge";
+export * from "./Avatar";
 export * from "./utils";

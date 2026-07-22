@@ -6,6 +6,7 @@ namespace SaaS.Tenant.Service.Infrastructure.Persistence;
 public class TenantDbContext : DbContext
 {
     public DbSet<Domain.Entities.Tenant> Tenants { get; set; }
+    public DbSet<TenantSettings> Settings { get; set; }
 
     public TenantDbContext(DbContextOptions<TenantDbContext> options) : base(options)
     {
@@ -23,6 +24,15 @@ public class TenantDbContext : DbContext
             builder.HasIndex(t => t.Slug).IsUnique();
             builder.Property(t => t.SubscriptionPlan).IsRequired();
             builder.Ignore(t => t.DomainEvents);
+        });
+
+        modelBuilder.Entity<TenantSettings>(builder =>
+        {
+            builder.HasKey(s => s.Id);
+            builder.Property(s => s.Key).IsRequired().HasMaxLength(100);
+            builder.Property(s => s.Value).IsRequired();
+            builder.HasIndex(s => new { s.TenantId, s.Key }).IsUnique();
+            builder.Ignore(s => s.DomainEvents);
         });
     }
 }
