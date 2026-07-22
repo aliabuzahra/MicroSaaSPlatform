@@ -176,7 +176,7 @@ describe('Notifications Role-Based Access E2E Tests', () => {
         it('Admin should send notification using template', async () => {
             const templateRes = await adminClient.get(`/api/notifications/templates/${createdTemplateId}`);
             
-            const response = await adminClient.post('/api/notifications/notifications/send', {
+            const response = await adminClient.post('/api/notifications/send', {
                 recipient: 'test@example.com',
                 templateKey: templateRes.data.key,
                 placeholders: {
@@ -190,7 +190,7 @@ describe('Notifications Role-Based Access E2E Tests', () => {
         });
 
         it('Admin should send direct notification', async () => {
-            const response = await adminClient.post('/api/notifications/notifications/send', {
+            const response = await adminClient.post('/api/notifications/send', {
                 recipient: 'direct@example.com',
                 subject: 'Direct Test Email',
                 body: '<p>This is a direct test email.</p>',
@@ -203,7 +203,7 @@ describe('Notifications Role-Based Access E2E Tests', () => {
         });
 
         it('Regular user should send notification (if allowed)', async () => {
-            const response = await userClient.post('/api/notifications/notifications/send', {
+            const response = await userClient.post('/api/notifications/send', {
                 recipient: 'user-sent@example.com',
                 subject: 'User Sent Email',
                 body: 'Test from regular user',
@@ -217,7 +217,7 @@ describe('Notifications Role-Based Access E2E Tests', () => {
 
     describe('Notification Logs', () => {
         it('Admin should view notification logs', async () => {
-            const response = await adminClient.get('/api/notifications/notifications/logs');
+            const response = await adminClient.get('/api/notifications/logs');
 
             expect(response.status).toBe(200);
             expect(response.data.items).toBeDefined();
@@ -225,14 +225,14 @@ describe('Notifications Role-Based Access E2E Tests', () => {
         });
 
         it('Should filter notification logs by status', async () => {
-            const response = await adminClient.get('/api/notifications/notifications/logs?status=Sent');
+            const response = await adminClient.get('/api/notifications/logs?status=Sent');
 
             expect(response.status).toBe(200);
             expect(response.data.items).toBeDefined();
         });
 
         it('Should paginate notification logs', async () => {
-            const response = await adminClient.get('/api/notifications/notifications/logs?page=1&pageSize=5');
+            const response = await adminClient.get('/api/notifications/logs?page=1&pageSize=5');
 
             expect(response.status).toBe(200);
             expect(response.data.page).toBe(1);
@@ -240,7 +240,7 @@ describe('Notifications Role-Based Access E2E Tests', () => {
         });
 
         it('Regular user should view notification logs (for their tenant)', async () => {
-            const response = await userClient.get('/api/notifications/notifications/logs');
+            const response = await userClient.get('/api/notifications/logs');
 
             expect(response.status).toBe(200);
             expect(response.data.items).toBeDefined();
@@ -314,7 +314,7 @@ describe('Cross-Tenant Notification Isolation', () => {
     });
 
     it('Tenant A should send notification to their tenant', async () => {
-        const response = await clientA.post('/api/notifications/notifications/send', {
+        const response = await clientA.post('/api/notifications/send', {
             recipient: 'tenantA-recipient@test.com',
             subject: 'Tenant A Notification',
             body: 'This is from Tenant A',
@@ -325,7 +325,7 @@ describe('Cross-Tenant Notification Isolation', () => {
     });
 
     it('Tenant B should send notification to their tenant', async () => {
-        const response = await clientB.post('/api/notifications/notifications/send', {
+        const response = await clientB.post('/api/notifications/send', {
             recipient: 'tenantB-recipient@test.com',
             subject: 'Tenant B Notification',
             body: 'This is from Tenant B',
@@ -336,7 +336,7 @@ describe('Cross-Tenant Notification Isolation', () => {
     });
 
     it('Tenant A should only see their notifications in logs', async () => {
-        const response = await clientA.get('/api/notifications/notifications/logs');
+        const response = await clientA.get('/api/notifications/logs');
 
         expect(response.status).toBe(200);
         
@@ -349,7 +349,7 @@ describe('Cross-Tenant Notification Isolation', () => {
     });
 
     it('Tenant B should only see their notifications in logs', async () => {
-        const response = await clientB.get('/api/notifications/notifications/logs');
+        const response = await clientB.get('/api/notifications/logs');
 
         expect(response.status).toBe(200);
         

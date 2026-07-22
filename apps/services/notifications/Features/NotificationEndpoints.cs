@@ -84,7 +84,7 @@ public static class NotificationEndpoints
             return Results.Ok(new { Items = logs, TotalCount = totalCount, Page = page, PageSize = pageSize });
         });
 
-        var templatesGroup = app.MapGroup("/templates");
+        var templatesGroup = app.MapGroup("/notifications/templates");
 
         templatesGroup.MapGet("/", async (NotificationsDbContext db) =>
         {

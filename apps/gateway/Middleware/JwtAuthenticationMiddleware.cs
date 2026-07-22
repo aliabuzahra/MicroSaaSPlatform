@@ -107,10 +107,22 @@ public class JwtAuthenticationMiddleware
             context.Response.StatusCode = 401;
             await context.Response.WriteAsJsonAsync(new { error = "Invalid token" });
         }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Malformed token for request to {Path}", path);
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsJsonAsync(new { error = "Invalid token format" });
+        }
+        catch (FormatException ex)
+        {
+            _logger.LogWarning(ex, "Malformed token format for request to {Path}", path);
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsJsonAsync(new { error = "Invalid token format" });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error validating token for request to {Path}", path);
-            context.Response.StatusCode = 500;
+            context.Response.StatusCode = 401;
             await context.Response.WriteAsJsonAsync(new { error = "Authentication error" });
         }
     }

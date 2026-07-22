@@ -8,7 +8,7 @@ public static class AuditEndpoints
 {
     public static void MapAuditEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/logs");
+        var group = app.MapGroup("/audit/logs");
 
         group.MapGet("/", async (
             AuditDbContext db,

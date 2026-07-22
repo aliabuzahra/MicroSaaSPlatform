@@ -9,7 +9,7 @@ public static class UsageEndpoints
 {
     public static void MapUsageEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/billing/usage");
+        var group = app.MapGroup("/billing/usage");
 
         // Report Usage
         group.MapPost("/events", async (ReportUsageRequest req, UsageService service) =>
@@ -45,7 +45,7 @@ public static class UsageEndpoints
                 return Results.Conflict("Limit already exists.");
             }
             await db.SaveChangesAsync();
-            return Results.Created($"/api/billing/usage/limits/{limit.Id}", limit);
+            return Results.Created($"/billing/usage/limits/{limit.Id}", limit);
         });
     }
 

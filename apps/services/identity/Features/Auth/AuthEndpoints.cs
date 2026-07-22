@@ -25,7 +25,8 @@ public static class AuthEndpoints
             IJwtService jwtService,
             IOptions<JwtSettings> jwtSettings) =>
         {
-            if (await db.Users.IgnoreQueryFilters().AnyAsync(u => u.Email == request.Email && u.TenantId.Value == request.TenantId))
+            var tenantIdToCheck = request.TenantId.HasValue ? new TenantId(request.TenantId.Value) : TenantId.New();
+            if (await db.Users.IgnoreQueryFilters().AnyAsync(u => u.Email == request.Email && u.TenantId == tenantIdToCheck))
             {
                 return Results.Conflict("Email already exists for this tenant.");
             }
@@ -102,7 +103,6 @@ public static class AuthEndpoints
             IOptions<JwtSettings> jwtSettings) =>
         {
             var existingToken = await db.RefreshTokens
-                .Include(r => r.UserId)
                 .FirstOrDefaultAsync(r => r.Token == request.RefreshToken);
 
             if (existingToken is null || !existingToken.IsActive)

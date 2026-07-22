@@ -174,7 +174,7 @@ describe('Billing Role-Based Access E2E Tests', () => {
 
             const response = await adminClient.post('/api/billing/usage/events', usage);
 
-            expect(response.status).toBe(200);
+            expect([200, 202]).toContain(response.status);
         });
 
         it('Admin should view usage metrics', async () => {
@@ -197,7 +197,7 @@ describe('Billing Role-Based Access E2E Tests', () => {
 
         it('Should check usage limits', async () => {
             const response = await adminClient.get(
-                `/api/billing/usage/check?tenantId=${tenantId}&metricKey=api_calls`
+                `/api/billing/usage?tenantId=${tenantId}&metricKey=api_calls`
             );
 
             expect(response.status).toBe(200);

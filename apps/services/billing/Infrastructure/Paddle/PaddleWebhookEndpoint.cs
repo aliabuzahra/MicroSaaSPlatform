@@ -12,7 +12,7 @@ public static class PaddleWebhookEndpoint
 {
     public static void MapPaddleWebhook(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/billing/webhook", async (HttpContext context, IConfiguration config, SubscriptionService subscriptionService, ILogger<Program> logger) =>
+        app.MapPost("/billing/webhook", async (HttpContext context, IConfiguration config, SubscriptionService subscriptionService, ILogger<Program> logger) =>
         {
             var signatureHeader = context.Request.Headers["Paddle-Signature"].ToString();
             var webhookSecret = config["Paddle:WebhookSecret"];
