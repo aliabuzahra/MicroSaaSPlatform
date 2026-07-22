@@ -1,90 +1,176 @@
-#version: '3.8'
+version: '3.8'
 
 services:
-  db:
+  # Infrastructure
+  postgres:
     image: postgres:15-alpine
-    container_name: saas-platform-db
+    container_name: saas-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgrespassword
-      POSTGRES_DB: saas_platform
+      POSTGRES_MULTIPLE_DATABASES: saas_identity,saas_tenant,saas_billing,saas_audit,saas_notifications
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: saas-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
-    image: rabbitmq:3-management
-    container_name: saas-platform-rabbitmq
+    image: rabbitmq:3-management-alpine
+    container_name: saas-rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
-  redis:
-    image: redis:alpine
-    container_name: saas-platform-redis
-    ports:
-      - "6379:6379"
-    restart: always
-
-  identity-service:
-    build:
-      context: .
-      dockerfile: apps/services/identity/Dockerfile
-    container_name: saas-platform-identity
-    ports:
-      - "5001:8080"
-    environment:
-      - ConnectionStrings__DefaultConnection=Host=db;Database=saas_identity;Username=postgres;Password=postgrespassword
-      - RabbitMQ__Host=rabbitmq
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ASPNETCORE_ENVIRONMENT=Development
-    depends_on:
-      - db
-      - rabbitmq
-    restart: always
-
-  gateway-service:
+  # Gateway
+  gateway:
     build:
       context: .
       dockerfile: apps/gateway/Dockerfile
-    container_name: saas-platform-gateway
+    container_name: saas-gateway
     ports:
-      - "5050:8080"
+      - "5000:8080"
     environment:
-      - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_ENVIRONMENT=Development
-      - ReverseProxy__Clusters__identity-cluster__Destinations__destination1__Address=http://identity-service:8080
-      - ReverseProxy__Clusters__tenant-cluster__Destinations__destination1__Address=http://tenant-service:8080
-      - ReverseProxy__Clusters__billing-cluster__Destinations__destination1__Address=http://billing-service:8080
       - ConnectionStrings__Redis=redis:6379
+      - Jwt__Secret=YourSuperSecretKeyThatIsAtLeast32CharactersLong!
+      - Jwt__Issuer=SaaS.Identity
+      - Jwt__Audience=SaaS.Platform
     depends_on:
-      - identity-service
-      - redis
-    restart: always
+      redis:
+        condition: service_healthy
 
-  billing-service:
+  # Identity Service
+  identity:
     build:
       context: .
-      dockerfile: apps/services/billing/Dockerfile
-    container_name: saas-platform-billing
+      dockerfile: apps/services/identity/Dockerfile
+    container_name: saas-identity
+    ports:
+      - "5001:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=saas_identity;Username=postgres;Password=postgrespassword
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - Jwt__Secret=YourSuperSecretKeyThatIsAtLeast32CharactersLong!
+      - Jwt__Issuer=SaaS.Identity
+      - Jwt__Audience=SaaS.Platform
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # Tenant Service
+  tenant:
+    build:
+      context: .
+      dockerfile: apps/services/tenant/Dockerfile
+    container_name: saas-tenant
     ports:
       - "5002:8080"
     environment:
-      - ConnectionStrings__DefaultConnection=Host=db;Database=saas_billing;Username=postgres;Password=postgrespassword
-      - RabbitMQ__Host=rabbitmq
-      - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_ENVIRONMENT=Development
-      - Paddle__WebhookSecret=paddle_secret_test_123
-      - ConnectionStrings__Redis=redis:6379
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=saas_tenant;Username=postgres;Password=postgrespassword
     depends_on:
-      - db
-      - rabbitmq
-      - redis
-    restart: always
+      postgres:
+        condition: service_healthy
+
+  # Billing Service
+  billing:
+    build:
+      context: .
+      dockerfile: apps/services/billing/Dockerfile
+    container_name: saas-billing
+    ports:
+      - "5003:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=saas_billing;Username=postgres;Password=postgrespassword
+      - ConnectionStrings__Redis=redis:6379
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - Paddle__WebhookSecret=your-paddle-webhook-secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # Audit Service
+  audit:
+    build:
+      context: .
+      dockerfile: apps/services/audit/Dockerfile
+    container_name: saas-audit
+    ports:
+      - "5004:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=saas_audit;Username=postgres;Password=postgrespassword
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # Notifications Service
+  notifications:
+    build:
+      context: .
+      dockerfile: apps/services/notifications/Dockerfile
+    container_name: saas-notifications
+    ports:
+      - "5005:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=saas_notifications;Username=postgres;Password=postgrespassword
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  redis_data:
   rabbitmq_data:

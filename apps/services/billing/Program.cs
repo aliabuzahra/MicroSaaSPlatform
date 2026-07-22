@@ -58,6 +58,7 @@ app.MapBillingEndpoints();
 app.MapGetSubscriptionEndpoint();
 app.MapUsageEndpoints();
 app.MapPaddleWebhook();
+app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Service = "Billing" }));
 
 app.Run();
 

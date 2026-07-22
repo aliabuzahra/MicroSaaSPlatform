@@ -1,40 +1,39 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from "@saas/ui";
-
-const API_BASE_URL = "http://localhost:5000/api";
-
-async function loginUser(data: { email: string; password: string }) {
-    const res = await fetch(`${API_BASE_URL}/identity/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error("Login failed");
-    return res.json();
-}
+import { useAuth } from "../context/AuthContext";
 
 export function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    
+    const { login, isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
 
-    const mutation = useMutation({
-        mutationFn: loginUser,
-        onSuccess: (data) => {
-            // Store token in localStorage (POC)
-            localStorage.setItem("token", data.token);
-            window.location.href = "/";
-        },
-        onError: () => {
-            setError("Invalid credentials");
+    const from = location.state?.from?.pathname || "/";
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate(from, { replace: true });
         }
-    });
+    }, [isAuthenticated, navigate, from]);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
-        mutation.mutate({ email, password });
+        setIsLoading(true);
+
+        try {
+            await login(email, password);
+            navigate(from, { replace: true });
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Invalid credentials");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -66,8 +65,8 @@ export function LoginPage() {
                             />
                         </div>
                         {error && <p className="text-red-500 text-sm">{error}</p>}
-                        <Button type="submit" className="w-full" disabled={mutation.isPending}>
-                            {mutation.isPending ? "Signing In..." : "Sign In"}
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading ? "Signing In..." : "Sign In"}
                         </Button>
                     </form>
                 </CardContent>

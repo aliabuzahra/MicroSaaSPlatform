@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PricingTable } from '../../components/PricingTable';
 import { UsageComponent } from './UsageComponent';
+import { useAuth } from '../../context/AuthContext';
 
 interface Subscription {
     id: string;
@@ -12,8 +13,8 @@ interface Subscription {
 }
 
 export const BillingDashboard = () => {
-    // TODO: Get TenantId from Auth Context
-    const tenantId = "55555555-5555-5555-5555-555555555555";
+    const { user } = useAuth();
+    const tenantId = user?.tenantId || "";
     const [subscription, setSubscription] = useState<Subscription | null>(null);
     const [loading, setLoading] = useState(true);
 
